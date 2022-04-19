@@ -63,9 +63,12 @@ sysinfo.txt
 
 # Crashlytics generated file
 crashlytics-build.properties
+*.swp
 
 /UserSettings
 .DS_Store
 .DS_Store?
 .vsconfig
+/Assets/Plugins
+/Assets/Resources
 *.meta
