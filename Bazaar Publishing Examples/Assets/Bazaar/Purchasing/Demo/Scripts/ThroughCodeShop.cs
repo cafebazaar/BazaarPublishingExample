@@ -61,15 +61,59 @@ public class ThroughCodeShop : CodelessShop, IStoreListener
         //Retrieve the purchased product
         var product = args.purchasedProduct;
         UpdateStats(product.definition.id);
-
+        SendAnalyticsEvent(product);
+        
         Log($"Purchase Complete - Product: {product.definition.id}");
 
         //We return Complete, informing IAP that the processing on our side is done and the transaction can be closed.
         return PurchaseProcessingResult.Complete;
     }
 
+    private void SendAnalyticsEvent(Product product)
+    {
+        string currency = product.metadata.isoCurrencyCode;
+        decimal price = product.metadata.localizedPrice;
+
+        // Creating the instance of the YandexAppMetricaRevenue class.
+        YandexAppMetricaRevenue revenue = new YandexAppMetricaRevenue(price, currency);
+        if (product.receipt != null)
+        {
+            // Creating the instance of the YandexAppMetricaReceipt class.
+            YandexAppMetricaReceipt yaReceipt = new YandexAppMetricaReceipt();
+            Receipt receipt = JsonUtility.FromJson<Receipt>(product.receipt);
+#if UNITY_ANDROID
+            PayloadAndroid payloadAndroid = JsonUtility.FromJson<PayloadAndroid>(receipt.Payload);
+            yaReceipt.Signature = payloadAndroid.Signature;
+            yaReceipt.Data = payloadAndroid.Json;
+#elif UNITY_IPHONE
+            yaReceipt.TransactionID = receipt.TransactionID;
+            yaReceipt.Data = receipt.Payload;
+#endif
+            revenue.Receipt = yaReceipt;
+        }
+        // Sending data to the AppMetrica server.
+        AppMetrica.Instance.ReportRevenue(revenue);
+    }
+
     public void OnPurchaseFailed(Product product, PurchaseFailureReason failureReason)
     {
         Log($"Purchase failed - Product: '{product.definition.id}', PurchaseFailureReason: {failureReason}");
     }
+}
+
+// Declaration of the Receipt structure for getting information about the IAP.
+[System.Serializable]
+public struct Receipt
+{
+    public string Store;
+    public string TransactionID;
+    public string Payload;
+}
+
+// Additional information about the IAP for Android.
+[System.Serializable]
+public struct PayloadAndroid
+{
+    public string Json;
+    public string Signature;
 }
