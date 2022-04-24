@@ -69,6 +69,6 @@ crashlytics-build.properties
 .DS_Store
 .DS_Store?
 .vsconfig
-/Assets/Plugins
-/Assets/Resources
+# /Assets/Plugins
+# /Assets/Resources
 *.meta
